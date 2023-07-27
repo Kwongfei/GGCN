@@ -115,6 +115,36 @@ def process_geom(G, dataset_name, embedding_method):
     g.ndata['norm'] = norm.unsqueeze(1)
     return g
 
+def train_test_split(labels, labelrate):
+
+    idx_train = []
+    idx_test = []
+    idx_val = []
+    val_count = 0
+
+    n = len(labels)
+    class_num = len(np.unique(labels))
+    train_num = class_num * labelrate
+
+    idx = list(range(n))
+
+    count = [0] * class_num
+    for i in range(len(idx)):
+        l = labels[idx[i]]
+        if count[l] < labelrate:
+            idx_train.append(idx[i])
+            count[l] = count[l] + 1
+        elif len(idx_train) == train_num and val_count < 500:
+            idx_val.append(idx[i])
+            val_count = val_count + 1
+    for i in range(len(idx)-1000, len(idx)):
+        idx_test.append(idx[i])
+    idx_np = {}
+    idx_np['train'] = idx_train
+    idx_np['val'] = idx_val
+    idx_np['test'] = idx_test
+
+    return idx_np
 
 def full_load_data(dataset_name, splits_file_path=None, use_raw_normalize=False, model_type=None, embedding_method=None, get_degree=False):
     if dataset_name in {'cora', 'citeseer', 'pubmed'}:
@@ -198,6 +228,13 @@ def full_load_data(dataset_name, splits_file_path=None, use_raw_normalize=False,
     
     #################### remove the nodes that the label vectors are all zeros, they aren't assigned to any class ############
     if dataset_name in {'cora', 'citeseer', 'pubmed'}:
+        idx_np = train_test_split(labels, 20)
+        train_mask = np.zeros(len(labels), dtype=bool)
+        val_mask = np.zeros(len(labels), dtype=bool)
+        test_mask = np.zeros(len(labels), dtype=bool)
+        train_mask[idx_np['train']] = True
+        val_mask[idx_np['val']] = True
+        test_mask[idx_np['test']] = True
         for n_i in non_valid_samples:
             if train_mask[n_i]:
                 train_mask[n_i] = False
