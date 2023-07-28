@@ -73,6 +73,10 @@ parser.add_argument('--emb', type=str, default='poincare', help='Embedding metho
 
 
 args = parser.parse_args()
+args.hidden = 16
+args.weight_decay = 1e-3
+args.decay_rate = 0.9
+args.layer = 32
 random.seed(args.seed)
 np.random.seed(args.seed)
 torch.manual_seed(args.seed)
@@ -239,7 +243,7 @@ def train(datastr,splitstr):
     for epoch in range(args.epochs):
         loss_tra,acc_tra = train_step(model,optimizer,features,labels,adj,idx_train, use_geom)
         loss_val,acc_val = validate_step(model,features,labels,adj,idx_val, use_geom)
-        if(epoch+1)%1 == 0: 
+        if(epoch+1)%200 == 0:
             print('Epoch:{:04d}'.format(epoch+1),
                 'train',
                 'loss:{:.3f}'.format(loss_tra),
